@@ -9,8 +9,11 @@ Asynchronous Background Processing: Offloads heavy analytical workflows to backg
 
 ## Tech Stack & Dependencies
 Language: Python 3 — The core programming language used to write the application backend logic.
+
 Framework: FastAPI — A modern, high-performance web framework used to build the RESTful API endpoints.
+
 ASGI Server: Uvicorn — The lightning-fast web server engine used to run and deploy the FastAPI application locally.
+
 Database: SQLite — A lightweight, file-based SQL database engine used to store and manage candidate session records safely.
 
 ## Repository File Structure
