@@ -25,6 +25,3 @@ Run this command in your first terminal window to launch your FastAPI server loc
 
 ```Bash
 uvicorn main:app --reload
-
-
-
