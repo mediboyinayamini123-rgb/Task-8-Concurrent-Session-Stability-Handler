@@ -109,79 +109,6 @@ Table: interview_sessions
 
 ---
 
----
-
-## API Endpoints
-
-### Create Session
-
-POST
-
-```http
-/api/sessions/bootstrap
-```
-
-Response:
-
-```json
-{
-  "id": "session-uuid",
-  "status": "IN_PROGRESS",
-  "notes": "Initial empty baseline canvas.",
-  "version": 1
-}
-```
-
----
-
-### Update Session
-
-PUT
-
-```http
-/api/sessions/{session_id}
-```
-
-Required Header:
-
-```http
-X-Session-ID: <session_id>
-```
-
-Request Body:
-
-```json
-{
-  "notes": "Updated notes",
-  "status": "IN_PROGRESS",
-  "currentVersion": 1
-}
-```
-
-Successful Response:
-
-```json
-{
-  "id": "session-id",
-  "status": "IN_PROGRESS",
-  "notes": "Updated notes",
-  "version": 2
-}
-```
-
-Conflict Response:
-
-```json
-{
-  "detail": {
-    "error": "CONCURRENCY_CONFLICT",
-    "message": "The session state has changed. Please refresh your data and try again."
-  }
-}
-```
-
----
-
 ## How Optimistic Locking Works
 
 Every session contains a version field.
@@ -224,14 +151,6 @@ This prevents race conditions and data corruption.
 ---
 
 ## Installation
-
-Clone the repository:
-
-```bash
-git clone <repository-url>
-cd pure_python_project
-```
-
 Install dependencies:
 
 ```bash
