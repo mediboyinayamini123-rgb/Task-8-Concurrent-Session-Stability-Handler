@@ -1,30 +1,319 @@
-# Task 8: Concurrent Session Stability handler
+# Concurrent Session Stability Handler
 
-## Project Overview
-The main purpose of this project is to provide a robust FastAPI backend that handles multi-user interview data safely, using version-checking logic to completely eliminate database data corruption and race conditions.
-Race Condition Mitigation: Prevents "Lost Update" bugs by making sure two interviewers saving data at the exact same millisecond cannot accidentally overwrite each other's work.
-Optimistic Concurrency Control: Catches overlapping saves at the same millisecond and safely blocks them with a 409 Concurrency Conflict error.
-Isolated Workspace Tracking: Manages session records cleanly in a local SQLite database using a permanent workspace identity token ("uptoskills").
-Asynchronous Background Processing: Offloads heavy analytical workflows to background workers to ensure the user interface never experiences lag.
+## Overview
 
-## Tech Stack & Dependencies
-Language: Python 3 — The core programming language used to write the application backend logic.
+This project implements a concurrency-safe interview session management system using FastAPI, SQLite, and Python's asynchronous programming capabilities.
 
-Framework: FastAPI — A modern, high-performance web framework used to build the RESTful API endpoints.
+The primary objective is to safely handle multiple simultaneous interview updates while preventing race conditions, maintaining session isolation, and ensuring data consistency.
 
-ASGI Server: Uvicorn — The lightning-fast web server engine used to run and deploy the FastAPI application locally.
+The solution demonstrates:
 
-Database: SQLite — A lightweight, file-based SQL database engine used to store and manage candidate session records safely.
+* Concurrency control using Optimistic Locking
+* Session isolation through unique session identifiers
+* Race condition detection and prevention
+* Background task processing
+* Concurrent request testing using asyncio and httpx
 
-## Repository File Structure
-database.py — Manages the SQLite connection pool, initializes the database tables, and handles session cleanup tasks.
-interview_platform.db — The standalone, local SQLite database file. This file is created automatically by Python the moment the server boots up and runs the SQL database initialization code.
-main.py — The central application file housing the FastAPI initialization, the REST endpoints, and the background task hooks.
-test_concurrency.py — The client testing script that fires simultaneous multi-threaded requests to verify the locking engine.
+---
 
-##  How to Setup and Run the Project
-Step 1: Initialize the Web Server Engine (Terminal 1)
-Run this command in your first terminal window to launch your FastAPI server locally using Uvicorn:
+## Problem Statement
 
-```Bash
-uvicorn main:app --reload
+In an interview platform, multiple requests may attempt to update the same interview session simultaneously.
+
+Without proper concurrency control, this can lead to:
+
+* Lost updates
+* Data corruption
+* Overwritten interview notes
+* Inconsistent interview status
+* Duplicate submissions
+
+This project solves these challenges using version-based optimistic locking.
+
+---
+
+## Features
+
+### Session Management
+
+* Create interview sessions dynamically
+* Unique UUID-based session identifiers
+* Session status tracking
+
+### Session Isolation
+
+* Request validation using X-Session-ID header
+* Prevents cross-session data contamination
+* Ensures users can only modify their own session
+
+### Optimistic Locking
+
+* Version-based concurrency control
+* Prevents stale updates
+* Detects concurrent modifications
+
+### Race Condition Prevention
+
+* Only one update can succeed for a given version
+* Remaining conflicting requests receive HTTP 409 Conflict
+
+### Background Processing
+
+* Asynchronous report generation
+* Non-blocking execution using FastAPI BackgroundTasks
+
+### Concurrency Testing
+
+* Simulates multiple simultaneous updates
+* Verifies race condition handling
+* Demonstrates conflict detection
+
+---
+
+## Technology Stack
+
+* Python 3.x
+* FastAPI
+* Uvicorn
+* SQLite
+* Asyncio
+* HTTPX
+
+---
+
+## Project Structure
+
+```text
+pure_python_project/
+│
+├── database.py
+├── main.py
+├── test_concurrency.py
+├── interview_platform.db
+└── README.md
+```
+
+---
+
+## Database Schema
+
+Table: interview_sessions
+
+| Column     | Type     | Description                |
+| ---------- | -------- | -------------------------- |
+| id         | TEXT     | Unique session identifier  |
+| status     | TEXT     | Interview status           |
+| notes      | TEXT     | Interview notes            |
+| version    | INTEGER  | Optimistic locking version |
+| updated_at | DATETIME | Last update timestamp      |
+
+---
+
+---
+
+## API Endpoints
+
+### Create Session
+
+POST
+
+```http
+/api/sessions/bootstrap
+```
+
+Response:
+
+```json
+{
+  "id": "session-uuid",
+  "status": "IN_PROGRESS",
+  "notes": "Initial empty baseline canvas.",
+  "version": 1
+}
+```
+
+---
+
+### Update Session
+
+PUT
+
+```http
+/api/sessions/{session_id}
+```
+
+Required Header:
+
+```http
+X-Session-ID: <session_id>
+```
+
+Request Body:
+
+```json
+{
+  "notes": "Updated notes",
+  "status": "IN_PROGRESS",
+  "currentVersion": 1
+}
+```
+
+Successful Response:
+
+```json
+{
+  "id": "session-id",
+  "status": "IN_PROGRESS",
+  "notes": "Updated notes",
+  "version": 2
+}
+```
+
+Conflict Response:
+
+```json
+{
+  "detail": {
+    "error": "CONCURRENCY_CONFLICT",
+    "message": "The session state has changed. Please refresh your data and try again."
+  }
+}
+```
+
+---
+
+## How Optimistic Locking Works
+
+Every session contains a version field.
+
+Example:
+
+```text
+Version = 1
+```
+
+Three concurrent requests attempt to update:
+
+```text
+Request A -> Version 1
+Request B -> Version 1
+Request C -> Version 1
+```
+
+The first request succeeds:
+
+```text
+Version becomes 2
+```
+
+The remaining requests fail because they still expect:
+
+```text
+Version = 1
+```
+
+Result:
+
+```text
+1 Successful Update
+2 Conflict Responses
+```
+
+This prevents race conditions and data corruption.
+
+---
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone <repository-url>
+cd pure_python_project
+```
+
+Install dependencies:
+
+```bash
+pip install fastapi uvicorn httpx
+```
+
+---
+
+## Running the Application
+
+Start the FastAPI server:
+
+```bash
+uvicorn main:app --reload --port 8000
+```
+
+The application will automatically create:
+
+```text
+interview_platform.db
+```
+
+---
+
+## Running the Concurrency Test
+
+Open a second terminal and execute:
+
+```bash
+python test_concurrency.py
+```
+
+---
+
+## Expected Output
+
+```text
+Session setup with ID: xxxxx
+
+Request #1 Return Code: 200
+Payload Output:
+{
+  "version": 2
+}
+
+Request #2 Return Code: 409
+Payload Output:
+{
+  "error": "CONCURRENCY_CONFLICT"
+}
+
+Request #3 Return Code: 409
+Payload Output:
+{
+  "error": "CONCURRENCY_CONFLICT"
+}
+```
+
+---
+
+## Sample Test Result
+
+Observed output during testing:
+
+```text
+Request #1 Return Code: 200
+
+Request #2 Return Code: 409
+
+Request #3 Return Code: 409
+```
+
+This confirms:
+
+* Race condition detection
+* Conflict prevention
+* Consistent database state
+* Successful optimistic locking implementation
+
+---
+
+
+
+
+This project demonstrates a complete concurrency-safe workflow for handling simultaneous interview session updates. By combining session isolation, optimistic locking, and asynchronous background processing, the system successfully prevents race conditions while maintaining data integrity and scalability.
