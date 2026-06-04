@@ -210,29 +210,26 @@ Payload Output:
 ```
 
 ---
-
 ## Sample Test Result
+1. Constructing sample interview data state inside local SQLite database...
+Session setup with ID: 9f7b1234-abcd-4eef-bcde-9876543210fa | Starting Version: 1
 
-Observed output during testing:
+2. Dispatching 3 concurrent updates to the same version state at the same millisecond...
 
-```text
+3. Testing execution matrix feedback:
 Request #1 Return Code: 200
+Payload Output: {"id":"9f7b1234-abcd-4eef-bcde-9876543210fa","status":"IN_PROGRESS","notes":"Interviewer A notes","version":2}
 
 Request #2 Return Code: 409
+Payload Output: {"detail":{"error":"CONCURRENCY_CONFLICT","message":"The session state has changed. Please refresh your data and try again."}}
 
 Request #3 Return Code: 409
-```
-
-This confirms:
-
-* Race condition detection
-* Conflict prevention
-* Consistent database state
-* Successful optimistic locking implementation
-
----
+Payload Output: {"detail":{"error":"CONCURRENCY_CONFLICT","message":"The session state has changed. Please refresh your data and try again."}}
 
 
 
 
-This project demonstrates a complete concurrency-safe workflow for handling simultaneous interview session updates. By combining session isolation, optimistic locking, and asynchronous background processing, the system successfully prevents race conditions while maintaining data integrity and scalability.
+
+
+
+
