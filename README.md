@@ -213,7 +213,7 @@ Payload Output:
 ## Sample Test Result
 1. Constructing sample interview data state inside local SQLite database...
    
-    Session setup with ID: b7a9cf40-487b-4205-b260-36a167a9a065 | Starting Version: 1
+ Session setup with ID: b7a9cf40-487b-4205-b260-36a167a9a065 | Starting Version: 1
 
 3. Dispatching 3 concurrent updates to the same version state at the same millisecond...
 
